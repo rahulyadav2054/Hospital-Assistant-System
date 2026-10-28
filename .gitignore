@@ -1,0 +1,13 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+data/*.db
+data/*.db-journal
+data/*.log
+ai/chroma_db/
+frontend/node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
