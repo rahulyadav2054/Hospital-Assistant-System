@@ -1,0 +1,54 @@
+{
+  "_comment": "Dates are relative to the day the seed runs: day_offset is days from today; hours_from_now is used for appointments that must fall inside the 24h change window.",
+  "users": [
+    {"username": "asha", "password": "demo123", "role": "patient", "patient_id": "P001"},
+    {"username": "rahul", "password": "demo123", "role": "patient", "patient_id": "P002"},
+    {"username": "meera", "password": "demo123", "role": "patient", "patient_id": "P003"},
+    {"username": "john", "password": "demo123", "role": "patient", "patient_id": "P004"},
+    {"username": "staff1", "password": "demo123", "role": "staff", "patient_id": null, "display_name": "Kavya (Front Desk)"}
+  ],
+  "patients": [
+    {"id": "P001", "name": "Asha Verma", "dob": "1972-04-11", "phone": "+91-98200-11021", "plan_id": "GOLD", "plan_member_id": "CS-G-10021", "coverage_start_offset": -400, "coverage_end_offset": 330},
+    {"id": "P002", "name": "Rahul Mehta", "dob": "1968-09-02", "phone": "+91-98200-22034", "plan_id": "BASIC", "plan_member_id": "CS-B-20034", "coverage_start_offset": -300, "coverage_end_offset": 65},
+    {"id": "P003", "name": "Meera Iyer", "dob": "1980-01-25", "phone": "+91-98200-33047", "plan_id": "SILVER", "plan_member_id": "CS-S-30047", "coverage_start_offset": -200, "coverage_end_offset": 165},
+    {"id": "P004", "name": "John D'Souza", "dob": "1975-06-30", "phone": "+91-98200-44058", "plan_id": "GOLD", "plan_member_id": "CS-G-40058", "coverage_start_offset": -395, "coverage_end_offset": -30}
+  ],
+  "appointments": [
+    {"id": "APT-1040", "patient_id": "P001", "doctor_id": "D01", "day_offset": -20, "time": "10:00", "room": "Room 312", "status": "completed"},
+    {"id": "APT-1042", "patient_id": "P001", "doctor_id": "D01", "day_offset": 5, "time": "09:00", "room": "Room 312", "status": "scheduled"},
+    {"id": "APT-1043", "patient_id": "P001", "doctor_id": "D02", "day_offset": 12, "time": "14:00", "room": "Room 205", "status": "scheduled"},
+    {"id": "APT-1044", "patient_id": "P001", "doctor_id": "D04", "hours_from_now": 23, "room": "Room 108", "status": "scheduled"},
+    {"id": "APT-2000", "patient_id": "P002", "doctor_id": "D03", "day_offset": -6, "time": "11:00", "room": "Room 104", "status": "completed"},
+    {"id": "APT-2001", "patient_id": "P002", "doctor_id": "D03", "day_offset": 9, "time": "11:00", "room": "Room 104", "status": "scheduled"},
+    {"id": "APT-3000", "patient_id": "P003", "doctor_id": "D05", "day_offset": -25, "time": "10:30", "room": "Room 221", "status": "completed"},
+    {"id": "APT-3001", "patient_id": "P003", "doctor_id": "D05", "day_offset": 7, "time": "10:00", "room": "Room 221", "status": "scheduled"},
+    {"id": "APT-4001", "patient_id": "P004", "doctor_id": "D02", "day_offset": 15, "time": "15:00", "room": "Room 205", "status": "scheduled"}
+  ],
+  "lab_results": [
+    {"id": "LAB-1101", "patient_id": "P001", "test_name": "Fasting Glucose", "value": 92, "unit": "mg/dL", "ref_low": 70, "ref_high": 99, "day_offset": -20},
+    {"id": "LAB-1102", "patient_id": "P001", "test_name": "Total Cholesterol", "value": 212, "unit": "mg/dL", "ref_low": 0, "ref_high": 200, "day_offset": -20},
+    {"id": "LAB-1103", "patient_id": "P001", "test_name": "HbA1c", "value": 5.4, "unit": "%", "ref_low": 4.0, "ref_high": 5.6, "day_offset": -20},
+
+    {"id": "LAB-2101", "patient_id": "P002", "test_name": "CBC - Hemoglobin", "value": 13.8, "unit": "g/dL", "ref_low": 13.0, "ref_high": 17.0, "day_offset": -4},
+    {"id": "LAB-2102", "patient_id": "P002", "test_name": "CBC - White Blood Cell Count", "value": 7.2, "unit": "x10^3/uL", "ref_low": 4.0, "ref_high": 11.0, "day_offset": -4},
+    {"id": "LAB-2103", "patient_id": "P002", "test_name": "CBC - Platelet Count", "value": 250, "unit": "x10^3/uL", "ref_low": 150, "ref_high": 400, "day_offset": -4},
+
+    {"id": "LAB-5501", "patient_id": "P003", "test_name": "Fasting Glucose", "value": 128, "unit": "mg/dL", "ref_low": 70, "ref_high": 99, "day_offset": -180},
+    {"id": "LAB-5502", "patient_id": "P003", "test_name": "HbA1c", "value": 7.4, "unit": "%", "ref_low": 4.0, "ref_high": 5.6, "day_offset": -180},
+    {"id": "LAB-5511", "patient_id": "P003", "test_name": "Fasting Glucose", "value": 118, "unit": "mg/dL", "ref_low": 70, "ref_high": 99, "day_offset": -90},
+    {"id": "LAB-5512", "patient_id": "P003", "test_name": "HbA1c", "value": 6.9, "unit": "%", "ref_low": 4.0, "ref_high": 5.6, "day_offset": -90},
+    {"id": "LAB-5531", "patient_id": "P003", "test_name": "Fasting Glucose", "value": 112, "unit": "mg/dL", "ref_low": 70, "ref_high": 99, "day_offset": -8},
+    {"id": "LAB-5532", "patient_id": "P003", "test_name": "HbA1c", "value": 6.6, "unit": "%", "ref_low": 4.0, "ref_high": 5.6, "day_offset": -8},
+    {"id": "LAB-5533", "patient_id": "P003", "test_name": "Serum Creatinine", "value": 0.9, "unit": "mg/dL", "ref_low": 0.6, "ref_high": 1.1, "day_offset": -8},
+
+    {"id": "LAB-7101", "patient_id": "P004", "test_name": "Fasting Glucose", "value": 95, "unit": "mg/dL", "ref_low": 70, "ref_high": 99, "day_offset": -60}
+  ],
+  "orders": [
+    {"id": "ORD-101", "patient_id": "P001", "order_type": "procedure", "description": "Total Knee Replacement (right knee)", "status": "pending", "ordered_by": "D02", "linked_procedure": "Total Knee Replacement", "day_offset": -20, "completed_offset": null},
+    {"id": "ORD-501", "patient_id": "P002", "order_type": "procedure", "description": "Laparoscopic Cholecystectomy (gallbladder removal)", "status": "pending", "ordered_by": "D03", "linked_procedure": "Laparoscopic Cholecystectomy", "day_offset": -6, "completed_offset": null},
+    {"id": "ORD-502", "patient_id": "P002", "order_type": "pre_op", "description": "Complete Blood Count (CBC)", "status": "completed", "ordered_by": "D03", "linked_procedure": "Laparoscopic Cholecystectomy", "day_offset": -6, "completed_offset": -4},
+    {"id": "ORD-503", "patient_id": "P002", "order_type": "pre_op", "description": "Electrocardiogram (ECG)", "status": "pending", "ordered_by": "D03", "linked_procedure": "Laparoscopic Cholecystectomy", "day_offset": -6, "completed_offset": null},
+    {"id": "ORD-504", "patient_id": "P002", "order_type": "pre_op", "description": "Chest X-ray", "status": "pending", "ordered_by": "D03", "linked_procedure": "Laparoscopic Cholecystectomy", "day_offset": -6, "completed_offset": null},
+    {"id": "ORD-301", "patient_id": "P003", "order_type": "lab", "description": "HbA1c (repeat in 3 months)", "status": "pending", "ordered_by": "D05", "linked_procedure": null, "day_offset": -8, "completed_offset": null}
+  ]
+}

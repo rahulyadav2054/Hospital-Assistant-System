@@ -1,0 +1,72 @@
+{
+  "departments": [
+    {"id": "CARD", "name": "Cardiology", "location": "Block A, Third Floor", "phone": "ext. 3100", "hours": "09:00-17:00, Mon-Sat"},
+    {"id": "ORTH", "name": "Orthopedics", "location": "Block B, Second Floor", "phone": "ext. 3200", "hours": "09:00-16:00, Mon-Sat"},
+    {"id": "RAD", "name": "Radiology", "location": "Block B, First Floor", "phone": "ext. 3300", "hours": "08:00-18:00, Mon-Sat"},
+    {"id": "ENDO", "name": "Endocrinology", "location": "Block A, Second Floor", "phone": "ext. 3400", "hours": "10:00-16:00, Mon-Fri"},
+    {"id": "GSUR", "name": "General Surgery", "location": "Block C, First Floor", "phone": "ext. 3500", "hours": "09:00-15:00, Mon-Sat"},
+    {"id": "GMED", "name": "General Medicine", "location": "Block A, First Floor", "phone": "ext. 3600", "hours": "08:00-20:00, Mon-Sat"},
+    {"id": "LAB", "name": "Laboratory", "location": "Block A, Ground Floor", "phone": "ext. 3700", "hours": "07:00-19:00, daily"}
+  ],
+  "department_keywords": {
+    "CARD": ["heart", "cardiac", "cardiology", "cardiologist", "chest pain", "blood pressure", "bp", "palpitation", "ecg"],
+    "ORTH": ["bone", "bones", "joint", "joints", "knee", "knees", "hip", "fracture", "back pain", "orthopedic", "orthopedics", "orthopaedic", "spine", "shoulder"],
+    "RAD": ["mri", "ct", "x-ray", "xray", "scan", "ultrasound", "radiology", "imaging"],
+    "ENDO": ["diabetes", "sugar", "thyroid", "hormone", "endocrinology", "endocrinologist", "insulin"],
+    "GSUR": ["surgery", "surgeon", "gallbladder", "hernia", "appendix", "operation"],
+    "GMED": ["fever", "infection", "cold", "cough", "general medicine", "physician", "follow-up", "checkup", "check-up"],
+    "LAB": ["blood test", "lab", "laboratory", "urine", "sample"]
+  },
+  "doctors": [
+    {"id": "D01", "name": "Dr. Arjun Rao", "department_id": "CARD", "specialty": "Cardiologist"},
+    {"id": "D02", "name": "Dr. Priya Nair", "department_id": "ORTH", "specialty": "Orthopedic Surgeon"},
+    {"id": "D03", "name": "Dr. Sameer Kulkarni", "department_id": "GSUR", "specialty": "General Surgeon"},
+    {"id": "D04", "name": "Dr. Farah Khan", "department_id": "GMED", "specialty": "Physician"},
+    {"id": "D05", "name": "Dr. Leena Joshi", "department_id": "ENDO", "specialty": "Endocrinologist"},
+    {"id": "D06", "name": "Dr. Vikram Shah", "department_id": "RAD", "specialty": "Radiologist"},
+    {"id": "D07", "name": "Dr. Neha Gupta", "department_id": "CARD", "specialty": "Cardiologist"}
+  ],
+  "insurance_plans": [
+    {"id": "GOLD", "name": "CareShield Gold", "annual_limit": 1000000, "deductible": 5000, "doc_ref": "INS-GOLD-001"},
+    {"id": "SILVER", "name": "CareShield Silver", "annual_limit": 500000, "deductible": 10000, "doc_ref": "INS-SILVER-001"},
+    {"id": "BASIC", "name": "CareShield Basic", "annual_limit": 200000, "deductible": 15000, "doc_ref": "INS-BASIC-001"}
+  ],
+  "procedures": [
+    {"code": "27447", "name": "Total Knee Replacement", "aliases": ["knee replacement", "total knee replacement", "total knee arthroplasty", "tkr", "knee arthroplasty", "joint replacement"], "base_cost": 350000},
+    {"code": "47562", "name": "Laparoscopic Cholecystectomy", "aliases": ["laparoscopic cholecystectomy", "cholecystectomy", "gallbladder removal", "gallbladder surgery", "gall bladder surgery", "gall bladder removal"], "base_cost": 150000},
+    {"code": "70551", "name": "MRI Scan", "aliases": ["mri", "mri scan", "magnetic resonance imaging"], "base_cost": 8000},
+    {"code": "33533", "name": "Coronary Artery Bypass Surgery", "aliases": ["coronary artery bypass", "bypass surgery", "heart bypass", "cabg"], "base_cost": 450000},
+    {"code": "49505", "name": "Hernia Repair", "aliases": ["hernia repair", "hernia surgery", "hernia operation"], "base_cost": 90000},
+    {"code": "15780", "name": "Cosmetic Surgery", "aliases": ["cosmetic surgery", "cosmetic procedure", "cosmetic", "plastic surgery", "rhinoplasty", "liposuction", "nose job"], "base_cost": 200000}
+  ],
+  "coverage_rules": [
+    {"id": "R-G-27447", "plan_id": "GOLD", "procedure_code": "27447", "covered": true, "coverage_pct": 80, "prior_auth_required": true, "waiting_period_days": 0, "section": "§4", "exclusion_note": null},
+    {"id": "R-G-47562", "plan_id": "GOLD", "procedure_code": "47562", "covered": true, "coverage_pct": 90, "prior_auth_required": false, "waiting_period_days": 0, "section": "§4", "exclusion_note": null},
+    {"id": "R-G-70551", "plan_id": "GOLD", "procedure_code": "70551", "covered": true, "coverage_pct": 90, "prior_auth_required": false, "waiting_period_days": 0, "section": "§4", "exclusion_note": null},
+    {"id": "R-G-33533", "plan_id": "GOLD", "procedure_code": "33533", "covered": true, "coverage_pct": 80, "prior_auth_required": true, "waiting_period_days": 0, "section": "§4", "exclusion_note": null},
+    {"id": "R-G-49505", "plan_id": "GOLD", "procedure_code": "49505", "covered": true, "coverage_pct": 90, "prior_auth_required": false, "waiting_period_days": 0, "section": "§4", "exclusion_note": null},
+    {"id": "R-G-15780", "plan_id": "GOLD", "procedure_code": "15780", "covered": false, "coverage_pct": 0, "prior_auth_required": false, "waiting_period_days": 0, "section": "§5", "exclusion_note": "Cosmetic procedures are excluded under the CareShield Gold plan"},
+
+    {"id": "R-S-27447", "plan_id": "SILVER", "procedure_code": "27447", "covered": true, "coverage_pct": 60, "prior_auth_required": true, "waiting_period_days": 730, "section": "§4, §6", "exclusion_note": null},
+    {"id": "R-S-47562", "plan_id": "SILVER", "procedure_code": "47562", "covered": true, "coverage_pct": 70, "prior_auth_required": true, "waiting_period_days": 0, "section": "§4", "exclusion_note": null},
+    {"id": "R-S-70551", "plan_id": "SILVER", "procedure_code": "70551", "covered": true, "coverage_pct": 70, "prior_auth_required": false, "waiting_period_days": 0, "section": "§4", "exclusion_note": null},
+    {"id": "R-S-33533", "plan_id": "SILVER", "procedure_code": "33533", "covered": true, "coverage_pct": 60, "prior_auth_required": true, "waiting_period_days": 0, "section": "§4", "exclusion_note": null},
+    {"id": "R-S-49505", "plan_id": "SILVER", "procedure_code": "49505", "covered": true, "coverage_pct": 70, "prior_auth_required": false, "waiting_period_days": 0, "section": "§4", "exclusion_note": null},
+    {"id": "R-S-15780", "plan_id": "SILVER", "procedure_code": "15780", "covered": false, "coverage_pct": 0, "prior_auth_required": false, "waiting_period_days": 0, "section": "§5", "exclusion_note": "Cosmetic procedures are excluded under the CareShield Silver plan"},
+
+    {"id": "R-B-27447", "plan_id": "BASIC", "procedure_code": "27447", "covered": false, "coverage_pct": 0, "prior_auth_required": false, "waiting_period_days": 0, "section": "§4", "exclusion_note": "Total knee replacement and other joint replacement surgery are not covered under the CareShield Basic plan"},
+    {"id": "R-B-47562", "plan_id": "BASIC", "procedure_code": "47562", "covered": true, "coverage_pct": 50, "prior_auth_required": true, "waiting_period_days": 0, "section": "§4", "exclusion_note": null},
+    {"id": "R-B-70551", "plan_id": "BASIC", "procedure_code": "70551", "covered": true, "coverage_pct": 50, "prior_auth_required": true, "waiting_period_days": 0, "section": "§4", "exclusion_note": null},
+    {"id": "R-B-33533", "plan_id": "BASIC", "procedure_code": "33533", "covered": false, "coverage_pct": 0, "prior_auth_required": false, "waiting_period_days": 0, "section": "§4", "exclusion_note": "Coronary artery bypass surgery is not covered under the CareShield Basic plan"},
+    {"id": "R-B-49505", "plan_id": "BASIC", "procedure_code": "49505", "covered": true, "coverage_pct": 50, "prior_auth_required": false, "waiting_period_days": 0, "section": "§4", "exclusion_note": null},
+    {"id": "R-B-15780", "plan_id": "BASIC", "procedure_code": "15780", "covered": false, "coverage_pct": 0, "prior_auth_required": false, "waiting_period_days": 0, "section": "§5", "exclusion_note": "Cosmetic procedures are excluded under the CareShield Basic plan"}
+  ],
+  "diagnostic_services": [
+    {"service": "ECG", "location": "Diagnostics wing, Block B, Ground Floor", "times": ["09:00", "10:30", "12:00", "14:00", "15:30"]},
+    {"service": "Chest X-ray", "location": "Diagnostics wing, Block B, Ground Floor", "times": ["09:30", "11:00", "12:30", "14:30", "16:00"]},
+    {"service": "MRI", "location": "Radiology, Block B, First Floor", "times": ["10:00", "13:00", "16:00"]}
+  ],
+  "diagnostic_days": {"from": 1, "to": 10},
+  "slot_times": ["10:30", "11:30", "13:30", "14:30"],
+  "slot_days": {"from": 2, "to": 21, "fully_booked_day": 2}
+}
