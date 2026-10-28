@@ -1,0 +1,40 @@
+{"q": "What are ICU visiting hours?", "user": "asha", "intent": "policy", "must_contain": ["11:00", "17:00"], "must_cite": "POL-VIS-001", "status": "ok"}
+{"q": "Can children visit the ICU?", "user": "asha", "intent": "policy", "must_contain": ["12"], "must_cite": "POL-VIS-001", "status": "ok"}
+{"q": "How many visitors can stay overnight in a general ward?", "user": "rahul", "intent": "policy", "must_contain": ["One adult attendant"], "must_cite": "POL-VIS-001", "status": "ok"}
+{"q": "Who can see my medical records?", "user": "meera", "intent": "policy", "must_contain": ["directly involved in your care"], "must_cite": "POL-PRV-001", "status": "ok"}
+{"q": "What is the no-show policy?", "user": "asha", "intent": "policy", "must_contain": ["three appointments"], "must_cite": "POL-APT-002", "status": "ok"}
+{"q": "How do I schedule an MRI scan?", "user": "asha", "intent": "procedure", "must_contain": ["3300", "referral"], "must_cite": "PRO-RAD-001", "status": "ok"}
+{"q": "How do I book a CT scan with contrast?", "user": "asha", "intent": "procedure", "must_contain": ["creatinine"], "must_cite": "PRO-RAD-001", "status": "ok"}
+{"q": "How do I prepare for an MRI?", "user": "meera", "intent": "procedure", "must_contain": ["30 minutes"], "must_cite": "PRO-RAD-001", "status": "ok"}
+{"q": "How can I get a copy of my medical records?", "user": "rahul", "intent": "procedure", "must_contain": ["Medical Records Office"], "must_cite": "PRO-DIS-001", "status": "ok"}
+{"q": "How long do lab reports take?", "user": "meera", "intent": "policy", "must_contain": ["6 hours"], "must_cite": "PRO-LAB-001", "status": "ok"}
+{"q": "What are my upcoming appointments?", "user": "asha", "intent": "personal_data", "must_contain": ["Cardiology", "Orthopedics"], "must_cite": "APT-1042", "status": "ok"}
+{"q": "When is my next appointment?", "user": "meera", "intent": "personal_data", "must_contain": ["Endocrinology"], "must_cite": "APT-3001", "status": "ok"}
+{"q": "Do I have an appointment with the surgeon?", "user": "rahul", "intent": "personal_data", "must_contain": ["General Surgery"], "must_cite": "APT-2001", "status": "ok"}
+{"q": "Show my past appointments", "user": "asha", "intent": "personal_data", "must_contain": ["Cardiology"], "must_cite": "APT-1040", "status": "ok"}
+{"q": "What are my upcoming appointments?", "user": "john", "intent": "personal_data", "must_contain": ["Orthopedics"], "must_cite": "APT-4001", "status": "ok"}
+{"q": "Am I covered for knee replacement under my insurance plan?", "user": "asha", "intent": "eligibility", "must_contain": ["80%", "Prior authorization"], "must_cite": "R-G-27447", "status": "ok"}
+{"q": "Am I covered for knee replacement?", "user": "john", "intent": "eligibility", "must_contain": ["expired"], "must_cite": "INS-GOLD-001", "status": "ok"}
+{"q": "Is cosmetic surgery covered?", "user": "meera", "intent": "eligibility", "must_contain": ["not covered"], "must_cite": "R-S-15780", "status": "ok"}
+{"q": "Is gallbladder surgery covered?", "user": "rahul", "intent": "eligibility", "must_contain": ["50%"], "must_cite": "R-B-47562", "status": "ok"}
+{"q": "Will my insurance cover a knee replacement?", "user": "meera", "intent": "eligibility", "must_contain": ["waiting period"], "must_cite": "R-S-27447", "status": "ok"}
+{"q": "What is my latest blood sugar reading?", "user": "meera", "intent": "lab_result", "must_contain": ["112", "mg/dL"], "must_cite": "LAB-5531", "status": "ok"}
+{"q": "Show my HbA1c trend", "user": "meera", "intent": "lab_result", "must_contain": ["6.6", "6.9", "7.4"], "must_cite": "LAB-5502", "status": "ok"}
+{"q": "What were my CBC results?", "user": "rahul", "intent": "lab_result", "must_contain": ["13.8"], "must_cite": "LAB-2101", "status": "ok"}
+{"q": "What is my cholesterol level?", "user": "asha", "intent": "lab_result", "must_contain": ["212"], "must_cite": "LAB-1102", "status": "ok"}
+{"q": "What was my latest creatinine?", "user": "meera", "intent": "lab_result", "must_contain": ["0.9"], "must_cite": "LAB-5533", "status": "ok"}
+{"q": "My doctor recommended surgery. What pre-operative tests are still pending?", "user": "rahul", "intent": "multi_step", "must_contain": ["Electrocardiogram", "Chest X-ray"], "must_cite": "CLP-SUR-001", "status": "ok"}
+{"q": "Which pre-op tests do I still need before my operation?", "user": "rahul", "intent": "multi_step", "must_contain": ["Still pending"], "must_cite": "ORD-503", "status": "ok"}
+{"q": "What tests are pending before my surgery?", "user": "rahul", "intent": "multi_step", "must_contain": ["Chest X-ray"], "must_cite": "ORD-504", "status": "ok"}
+{"q": "What pre-op tests are pending for my knee surgery?", "user": "asha", "intent": "multi_step", "must_contain": ["No pre-operative test orders"], "must_cite": "ORD-101", "status": "ok"}
+{"q": "Have I completed my pre-operative tests?", "user": "rahul", "intent": "multi_step", "must_contain": ["Completed"], "must_cite": "ORD-502", "status": "ok"}
+{"q": "Reschedule my cardiology appointment", "user": "asha", "intent": "action", "must_contain": ["confirm"], "must_cite": "APT-1042", "status": "ok", "expect_action": true}
+{"q": "Please reschedule my endocrinology appointment", "user": "meera", "intent": "action", "must_contain": ["Endocrinology"], "must_cite": "APT-3001", "status": "ok", "expect_action": true}
+{"q": "Can you move my surgery consultation to another day?", "user": "rahul", "intent": "action", "must_contain": ["General Surgery"], "must_cite": "APT-2001", "status": "ok", "expect_action": true}
+{"q": "Reschedule my appointment tomorrow", "user": "asha", "intent": "action", "must_contain": ["24 hours"], "must_cite": "APT-1044", "status": "ok", "expect_action": false}
+{"q": "Reschedule my orthopedics appointment to next week", "user": "john", "intent": "action", "must_contain": ["Orthopedics"], "must_cite": "APT-4001", "status": "ok", "expect_action": true}
+{"q": "Do you have treatment information for proton beam therapy?", "user": "asha", "intent": "policy", "status": "not_found"}
+{"q": "Do you have a helipad?", "user": "asha", "intent": "policy", "status": "not_found"}
+{"q": "What vaccines are needed for travel to Brazil?", "user": "meera", "intent": "policy", "status": "not_found"}
+{"q": "Can I bring my dog to the ward?", "user": "rahul", "intent": "policy", "status": "not_found"}
+{"q": "Tell me a joke", "user": "asha", "intent": "out_of_scope", "status": "not_found"}
