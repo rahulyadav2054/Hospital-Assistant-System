@@ -1,0 +1,14 @@
+.git
+.venv
+.env
+**/__pycache__
+**/*.pyc
+.pytest_cache
+data/*.db
+data/*.log
+ai/chroma_db
+tests
+frontend/node_modules
+frontend/dist
+frontend/test-results
+frontend/playwright-report
