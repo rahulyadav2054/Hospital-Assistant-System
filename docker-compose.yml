@@ -6,6 +6,7 @@ services:
     environment:
       DATABASE_URL: sqlite:////app/data/db/hospital.db
       CORS_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+      TZ: Asia/Kolkata                 # hospital local time
       SEED_ON_START: "true"            # fresh demo data on every start; "false" keeps bookings
     volumes:
       - hospital-db:/app/data/db

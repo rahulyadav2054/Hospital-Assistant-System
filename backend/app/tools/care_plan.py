@@ -138,7 +138,7 @@ def propose_care_plan(db, patient_id, user_ctx, items):
     shown = [{"index": i, **lab} for i, lab in enumerate(labels)]
     return {"pending_action_id": pa.id, "items": shown,
             "summary": "; ".join(f"{x['label']} ({x['detail']})" for x in shown),
-            "expires_at": pa.expires_at.isoformat(timespec="seconds")}
+            "expires_at": pa.expires_at.astimezone().isoformat(timespec="seconds")}  # with UTC offset
 
 
 # ------------------------------------------------------------------ phase 2: confirm (called from confirm_action)

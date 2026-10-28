@@ -50,12 +50,14 @@ export default function ConfirmActionModal({ action, onDone, onClose }) {
         <h2 id="confirm-title" className="text-lg font-semibold text-brand-900">Confirm reschedule</h2>
         <p className="mt-3 text-slate-700">{action.summary}?</p>
         <p className="mt-2 text-xs text-slate-500">
-          {left > 0 ? `This request expires in ${mm}:${ss}.` : "This request has expired."} Nothing changes until you confirm.
+          {left > 0 ? `This request expires in ${mm}:${ss}. ` : ""}Nothing changes until you confirm.
         </p>
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" onClick={cancel} disabled={busy}
             className="px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-50">Cancel</button>
-          <button type="button" onClick={confirm} disabled={busy || left === 0}
+          {/* Not disabled by the browser's clock (it can differ from the server's): the server decides,
+              and answers 410 if the request really expired. */}
+          <button type="button" onClick={confirm} disabled={busy}
             className="px-4 py-2 rounded-lg bg-brand-700 hover:bg-brand-600 text-white font-medium disabled:opacity-60">
             {busy ? "Saving…" : "Confirm"}
           </button>

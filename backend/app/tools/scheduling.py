@@ -86,7 +86,8 @@ def propose_reschedule(db, patient_id, user_ctx, appointment_id, slot_id):
     return {"pending_action_id": pa.id,
             "summary": f"Move {dept.name} ({doc.name}) from {_readable(appt.start_time)} to {_readable(slot.start_time)}",
             "appointment_id": appt.id, "old_start": fmt_dt(appt.start_time), "new_start": fmt_dt(slot.start_time),
-            "expires_at": pa.expires_at.isoformat(timespec="seconds")}
+            # With the UTC offset: a browser in another timezone (or a UTC container) must not misread it.
+            "expires_at": pa.expires_at.astimezone().isoformat(timespec="seconds")}
 
 
 def _load_pending(db, user_ctx, pending_action_id) -> PendingAction:

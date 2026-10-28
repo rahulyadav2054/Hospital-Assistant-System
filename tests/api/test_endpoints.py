@@ -54,6 +54,13 @@ def _propose(client):
     return ask(client, "asha", "Reschedule my cardiology appointment")["action_required"]
 
 
+def test_expiry_carries_timezone(client, reseed):
+    """A browser in another timezone (or a UTC Docker container) must not read the expiry as already past."""
+    expires = datetime.fromisoformat(_propose(client)["expires_at"])
+    assert expires.tzinfo is not None
+    assert timedelta(minutes=9) < expires - datetime.now().astimezone() <= timedelta(minutes=10)
+
+
 def test_cancel_pending_action(client, reseed):
     pa = _propose(client)["pending_action_id"]
     r = client.post("/actions/cancel", json={"pending_action_id": pa}, headers=auth(client, "asha"))

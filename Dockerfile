@@ -17,6 +17,10 @@ RUN pip install torch --index-url https://download.pytorch.org/whl/cpu
 COPY backend/requirements.txt backend/requirements.txt
 RUN pip install -r backend/requirements.txt
 
+# Hospital local time (appointments, slots, the 24-hour rule). The slim image has no timezone data.
+RUN apt-get update && apt-get install -y --no-install-recommends tzdata && rm -rf /var/lib/apt/lists/*
+ENV TZ=Asia/Kolkata
+
 COPY ai ai
 COPY backend backend
 COPY data/docs data/docs
