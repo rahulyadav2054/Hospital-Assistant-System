@@ -12,9 +12,9 @@
     "CARD": ["heart", "cardiac", "cardiology", "cardiologist", "chest pain", "blood pressure", "bp", "palpitation", "ecg"],
     "ORTH": ["bone", "bones", "joint", "joints", "knee", "knees", "hip", "fracture", "back pain", "orthopedic", "orthopedics", "orthopaedic", "spine", "shoulder"],
     "RAD": ["mri", "ct", "x-ray", "xray", "scan", "ultrasound", "radiology", "imaging"],
-    "ENDO": ["diabetes", "sugar", "thyroid", "hormone", "endocrinology", "endocrinologist", "insulin"],
+    "ENDO": ["diabetes", "sugar", "thyroid", "hormone", "endocrinology", "endocrinologist", "insulin", "glucose", "hba1c", "a1c"],
     "GSUR": ["surgery", "surgeon", "gallbladder", "hernia", "appendix", "operation"],
-    "GMED": ["fever", "infection", "cold", "cough", "general medicine", "physician", "follow-up", "checkup", "check-up"],
+    "GMED": ["fever", "infection", "cold", "cough", "general medicine", "physician", "follow-up", "checkup", "check-up", "cholesterol", "lipid"],
     "LAB": ["blood test", "lab", "laboratory", "urine", "sample"]
   },
   "doctors": [

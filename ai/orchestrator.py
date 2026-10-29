@@ -10,9 +10,10 @@ import time
 from datetime import date
 
 from . import config, guardrails, offline
-from .agents import surgery_readiness, test_booking
+from .agents import registry as agent_registry
+from .agents import test_booking
 from .classifier import classify, classify_rules, trim_history
-from .grounding import verify_grounding
+from .grounding import is_non_factual, verify_grounding
 from .prompts import SYSTEM_PROMPT
 from .sources import RunContext
 from .tool_schemas import TOOL_NAMES, TOOLS, openai_tools_for
@@ -22,8 +23,8 @@ log = logging.getLogger("ai")
 DISCLAIMER = "This is not medical advice. Please discuss results and treatment with your doctor."
 COVERAGE_DISCLAIMER = ("Coverage is checked against your plan rules; final approval and amounts are decided by "
                        "your insurer.")
-AGENT_PATIENTS_ONLY_MSG = ("Surgery readiness checks and test bookings work on a patient's own record, so they are "
-                           "available to patients when they are logged in.")
+AGENT_PATIENTS_ONLY_MSG = ("The AI agents and test bookings work on a patient's own record, so they are available "
+                           "to patients when they are logged in.")
 NO_RECORDS_MSG = ("I couldn't find any matching records in your file for this request. If you think something is "
                   "missing, please contact the Patient Help Desk (extension 1100).")
 STALE_NOTE ="Note: this policy is more than a year old and may have been updated; please confirm with the department."
@@ -144,7 +145,8 @@ def _llm_loop(message: str, history: list[dict], ctx: RunContext, intent: str) -
 
 
 AGENT_SUMMARY_PROMPT = (
-    "You write a 2-3 sentence overview of a surgery readiness check for the patient. Use ONLY the facts given. "
+    "You write a 2-3 sentence overview, for the patient, of what a hospital assistant agent found and prepared. "
+    "Use ONLY the facts given. "
     "End every sentence with the [Sx] tags of the facts it uses, copied exactly. Copy numbers and dates exactly. "
     "Do not give medical advice. Do not list every detail - the steps are shown separately. "
     "IMPORTANT: nothing in the plan has been booked or submitted yet. Describe slots as 'proposed' and say the "
@@ -175,10 +177,20 @@ def _agent_summary(mode: str, facts: str) -> str:
     return ""
 
 
-def _run_agent(user_ctx, execute_tool, on_event, t0, mode) -> dict:
+def _verified(text: str, ctx: RunContext) -> str | None:
+    """A step detail / notification as the user may see it: grounded, or a harmless question/transition."""
+    checked, ok = verify_grounding(text, ctx.sources)
+    if ok == "ok":
+        return checked
+    return text if is_non_factual(text) else None
+
+
+def _run_agent(name: str, text: str, user_ctx, execute_tool, on_event, t0, mode) -> dict:
+    agent_cls = agent_registry.BY_NAME[name]
     ctx = RunContext(user_ctx, execute_tool, on_event)
-    ctx.emit({"type": "agent", "name": surgery_readiness.NAME, "title": surgery_readiness.TITLE})
-    result = surgery_readiness.run(ctx)
+    ctx.emit({"type": "agent", "name": agent_cls.NAME, "title": agent_cls.TITLE, "icon": agent_cls.ICON})
+    agent = agent_cls(ctx, text)
+    result = agent.run()
 
     summary = ""
     if mode in ("llm", "claude") and len(result["steps"]) > 1:
@@ -188,20 +200,35 @@ def _run_agent(user_ctx, execute_tool, on_event, t0, mode) -> dict:
 
     ctx.emit({"type": "status", "text": "Verifying every fact against its source"})
     answer, status = verify_grounding(result["draft"], ctx.sources)
-    steps = []
-    for s in result["steps"]:
-        details = []
-        for d in s["details"]:
-            checked, ok = verify_grounding(d, ctx.sources)
-            if ok == "ok":
-                details.append(checked)
-        steps.append({**s, "details": details})
+    steps = [{**s, "details": [v for v in (_verified(d, ctx) for d in s["details"]) if v]} for s in result["steps"]]
+    cards = []
+    for card in result.get("cards", []):
+        if card["type"] == "notifications":
+            items = [{**n, "text": v} for n in card["data"]["items"] if (v := _verified(n["text"], ctx))]
+            card = {"type": "notifications", "data": {"items": items}}
+        cards.append(card)
     if summary:
         answer = f"{summary}\n\n{answer}"
     resp = _response(answer, status, "agent", ctx, mode="agent", t0=t0)
-    resp["agent"] = {"name": surgery_readiness.NAME, "title": surgery_readiness.TITLE, "steps": steps,
+    resp["cards"] = cards + resp["cards"]
+    resp["agent"] = {"name": agent_cls.NAME, "title": agent_cls.TITLE, "icon": agent_cls.ICON, "steps": steps,
                      "summary": summary or None, "summary_by": mode if summary else None}
     return resp
+
+
+def proactive_notifications(user_ctx: dict, execute_tool) -> list[dict]:
+    """Run the Proactive Care Agent silently (no LLM) for the notification bell. Texts are verified."""
+    from .agents.proactive_care import ProactiveCareAgent
+
+    ctx = RunContext(user_ctx, execute_tool)
+    agent = ProactiveCareAgent(ctx)
+    agent.run()
+    out = []
+    for n in agent.notifications:
+        text = _verified(n["text"], ctx)
+        if text:
+            out.append({**n, "text": _TAG_RE.sub("", text).strip()})
+    return out
 
 
 def _build_cards(ctx: RunContext, intent: str) -> list[dict]:
@@ -291,7 +318,7 @@ def answer_query(message: str, user_ctx: dict, history: list[dict] | None = None
         if user_ctx.get("role") != "patient":
             return _response(AGENT_PATIENTS_ONLY_MSG, "ok", "out_of_scope", mode="guardrail", t0=t0)
         if first["intent"] == "agent":
-            return _run_agent(user_ctx, execute_tool, on_event, t0, mode)
+            return _run_agent(first["route"], first["text"], user_ctx, execute_tool, on_event, t0, mode)
         # Booking a test runs as a fixed workflow (reliable, no LLM tokens) in every mode.
         ctx = RunContext(user_ctx, execute_tool, on_event)
         draft = test_booking.run(ctx, first["text"])

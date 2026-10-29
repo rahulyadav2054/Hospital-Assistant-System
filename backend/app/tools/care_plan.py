@@ -1,5 +1,7 @@
-"""Tools behind the Surgery Readiness Agent: diagnostic test slots, prior-authorization requests, and a
-multi-item care plan that follows the same two-phase commit as rescheduling (propose -> patient approves)."""
+"""Tools behind the agents: diagnostic test slots, prior-authorization requests, and a multi-item care plan
+that follows the same two-phase commit as rescheduling (propose -> patient approves).
+
+Plan item types: book_test, submit_prior_auth, book_appointment, reschedule_appointment."""
 import json
 import re
 import secrets
@@ -8,9 +10,11 @@ from datetime import date, datetime, timedelta
 from sqlalchemy import update
 
 from ..config import settings
-from ..models import DiagnosticSlot, Order, Patient, PendingAction, PriorAuthRequest, Procedure
+from ..models import (Appointment, Department, DiagnosticSlot, Doctor, Order, Patient, PendingAction,
+                      PriorAuthRequest, Procedure, Slot)
 from .common import ActionError, NotFound, fmt_dt
 from .eligibility import check_coverage
+from .scheduling import _check_changeable
 
 # Which bookable service a test order needs. Tests not listed here (blood tests) are walk-in.
 SERVICE_KEYS = {
@@ -97,6 +101,45 @@ def _check_prior_auth(db, patient_id, user_ctx, procedure_code):
     return cov
 
 
+def _doctor_slot(db, doctor_id, slot_id, used_slots: set) -> Slot:
+    try:
+        slot = db.get(Slot, int(slot_id))
+    except (TypeError, ValueError):
+        raise ValueError("slot_id must be a number")
+    if (not slot or slot.is_booked or slot.doctor_id != doctor_id or slot.start_time <= datetime.now()
+            or slot.id in used_slots):
+        raise ValueError("That appointment slot is no longer available")
+    used_slots.add(slot.id)
+    return slot
+
+
+def _check_clash(db, patient_id, start: datetime, ignore_appointment: str | None = None) -> None:
+    clash = (db.query(Appointment).filter(Appointment.patient_id == patient_id, Appointment.status == "scheduled",
+                                          Appointment.start_time == start, Appointment.id != (ignore_appointment or ""))
+             .first())
+    if clash:
+        raise ValueError(f"You already have an appointment at {_readable(start)}")
+
+
+def _check_book_appointment(db, patient_id, doctor_id, slot_id, used_slots: set):
+    doc = db.get(Doctor, doctor_id)
+    if not doc:
+        raise NotFound()
+    slot = _doctor_slot(db, doc.id, slot_id, used_slots)
+    _check_clash(db, patient_id, slot.start_time)
+    return doc, slot
+
+
+def _check_reschedule(db, patient_id, appointment_id, slot_id, used_slots: set):
+    appt = db.get(Appointment, appointment_id)
+    if not appt or appt.patient_id != patient_id:
+        raise NotFound()  # never reveal another patient's appointment
+    _check_changeable(appt)
+    slot = _doctor_slot(db, appt.doctor_id, slot_id, used_slots)  # same doctor (Policy POL-APT-002 §2)
+    _check_clash(db, patient_id, slot.start_time, ignore_appointment=appt.id)
+    return appt, slot
+
+
 def _validate(db, patient_id, user_ctx, items) -> list[dict]:
     """Check every item and return display labels. Raises NotFound / ValueError."""
     if not isinstance(items, list) or not items:
@@ -115,6 +158,17 @@ def _validate(db, patient_id, user_ctx, items) -> list[dict]:
             cov = _check_prior_auth(db, patient_id, user_ctx, it.get("procedure_code"))
             labels.append({"type": kind, "label": f"Submit prior authorization for {cov['procedure']}",
                            "detail": f"{cov['plan']} - sent to the Billing and Insurance Desk"})
+        elif kind == "book_appointment":
+            doc, slot = _check_book_appointment(db, patient_id, it.get("doctor_id"), it.get("slot_id"), used_slots)
+            dept = db.get(Department, doc.department_id)
+            labels.append({"type": kind, "label": f"Book {dept.name} with {doc.name}",
+                           "detail": f"{_readable(slot.start_time)} at {dept.location}"})
+        elif kind == "reschedule_appointment":
+            appt, slot = _check_reschedule(db, patient_id, it.get("appointment_id"), it.get("slot_id"), used_slots)
+            dept = db.get(Department, appt.department_id)
+            labels.append({"type": kind,
+                           "label": f"Move {dept.name} ({db.get(Doctor, appt.doctor_id).name})",
+                           "detail": f"from {_readable(appt.start_time)} to {_readable(slot.start_time)}"})
         else:
             raise ValueError(f"Unknown plan item type '{kind}'")
     return labels
@@ -127,6 +181,11 @@ def propose_care_plan(db, patient_id, user_ctx, items):
     for it in items:
         if it["type"] == "book_test":
             clean.append({"type": "book_test", "order_id": it["order_id"], "slot_id": int(it["slot_id"])})
+        elif it["type"] == "book_appointment":
+            clean.append({"type": "book_appointment", "doctor_id": it["doctor_id"], "slot_id": int(it["slot_id"])})
+        elif it["type"] == "reschedule_appointment":
+            clean.append({"type": "reschedule_appointment", "appointment_id": it["appointment_id"],
+                          "slot_id": int(it["slot_id"])})
         else:
             clean.append({"type": "submit_prior_auth", "procedure_code": str(it["procedure_code"])})
     pa = PendingAction(id=f"PA-{secrets.token_hex(4).upper()}", user_id=user_ctx["user_id"],
@@ -158,8 +217,39 @@ def confirm_care_plan(db, user_ctx, pa: PendingAction, selected=None) -> dict:
     except ValueError as e:
         raise ActionError(409, f"{e}. Please ask again for an updated plan.")
 
+    def claim(model, slot_id):
+        res = db.execute(update(model).where(model.id == slot_id, model.is_booked.is_(False)).values(is_booked=True))
+        if res.rowcount != 1:
+            db.rollback()  # all-or-nothing
+            raise ActionError(409, "A slot was just taken. Please ask again for an updated plan.")
+        return db.get(model, slot_id)
+
     results = []
     for i, it in zip(idx, chosen):
+        if it["type"] == "book_appointment":
+            slot = claim(Slot, it["slot_id"])
+            doc = db.get(Doctor, it["doctor_id"])
+            dept = db.get(Department, doc.department_id)
+            appt = Appointment(id=f"APT-{secrets.token_hex(3).upper()}", patient_id=patient_id, doctor_id=doc.id,
+                               department_id=dept.id, start_time=slot.start_time,
+                               end_time=slot.start_time + timedelta(minutes=30), location=dept.location,
+                               status="scheduled")
+            db.add(appt)
+            results.append({"index": i, "type": "book_appointment", "appointment_id": appt.id,
+                            "message": f"{dept.name} with {doc.name} booked for {_readable(slot.start_time)}"})
+            continue
+        if it["type"] == "reschedule_appointment":
+            slot = claim(Slot, it["slot_id"])
+            appt = db.get(Appointment, it["appointment_id"])
+            old = db.query(Slot).filter_by(doctor_id=appt.doctor_id, start_time=appt.start_time).first()
+            if old:
+                old.is_booked = False
+            duration = appt.end_time - appt.start_time
+            appt.start_time, appt.end_time = slot.start_time, slot.start_time + duration
+            dept = db.get(Department, appt.department_id)
+            results.append({"index": i, "type": "reschedule_appointment", "appointment_id": appt.id,
+                            "message": f"{dept.name} moved to {_readable(slot.start_time)}"})
+            continue
         if it["type"] == "book_test":
             claimed = db.execute(update(DiagnosticSlot)
                                  .where(DiagnosticSlot.id == it["slot_id"], DiagnosticSlot.is_booked.is_(False))

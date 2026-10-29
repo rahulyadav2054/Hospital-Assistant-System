@@ -101,10 +101,53 @@ export function DepartmentCard({ data }) {
   );
 }
 
+/** Visit Planner: the day as a vertical timeline. */
+export function VisitTimelineCard({ data }) {
+  return (
+    <Card title={`Your visit · ${formatDate(data.date)}`} testId="visit-timeline">
+      <ol className="relative border-l-2 border-violet-200 ml-2 mt-1 space-y-3">
+        {data.items.map((it, i) => (
+          <li key={i} className="ml-4">
+            <span className="absolute -left-[7px] mt-1.5 w-3 h-3 rounded-full bg-violet-500 border-2 border-white" aria-hidden="true" />
+            <div className="text-sm"><span className="font-semibold">{it.time}</span> · {it.kind === "test" ? "🧪" : "🩺"} {it.title}</div>
+            {it.location && <div className="text-xs text-slate-500">📍 {it.location}</div>}
+          </li>
+        ))}
+      </ol>
+    </Card>
+  );
+}
+
+/** Proactive Care Agent: what needs attention, each with a one-click next step. */
+export function NotificationsCard({ data, onAsk }) {
+  const icon = { warning: "⚠️", action: "👉", info: "ℹ️" };
+  if (!data.items.length) return <Card title="Needs attention"><p className="text-sm">Nothing right now. ✅</p></Card>;
+  return (
+    <Card title="Needs attention" testId="notifications-card">
+      <ul className="space-y-2">
+        {data.items.map((n) => (
+          <li key={n.id} className="text-sm flex flex-wrap items-start gap-2">
+            <span aria-hidden="true">{icon[n.level] ?? "ℹ️"}</span>
+            <span className="flex-1 min-w-[12rem]"><span className="font-medium">{n.title}:</span> {n.text.replace(/\s*\[S\d+\]/g, "")}</span>
+            {n.action_prompt && onAsk && (
+              <button type="button" onClick={() => onAsk(n.action_prompt)}
+                className="text-xs font-medium bg-violet-600 hover:bg-violet-700 text-white rounded-md px-2.5 py-1">
+                {n.action_label} →
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
 export const CARD_MAP = {
   lab_result: LabResultCard,
   appointments: AppointmentsCard,
   coverage: CoverageCard,
   pending_tests: PendingTestsCard,
   department: DepartmentCard,
+  visit_timeline: VisitTimelineCard,
+  notifications: NotificationsCard,
 };

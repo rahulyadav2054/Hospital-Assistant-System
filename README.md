@@ -46,6 +46,24 @@ Sign in with a demo account (password `demo123`): `asha`, `rahul`, `meera`, `joh
 | Action | "Reschedule my cardiology appointment" (asha) | slots → pending action → **Confirm** in the UI |
 | Not found | "Do you have treatment information for proton beam therapy?" | reranker threshold → grounded not-found |
 
+### AI agents (7)
+
+Patients see an **"Your AI agents"** hub (welcome message + sidebar) and a **🔔 bell**. Every agent plans steps,
+uses hospital tools, streams its progress live, cites every fact, and proposes **one plan that the patient approves**.
+
+| Agent | Try (user) | What it does |
+|---|---|---|
+| 🩺 Surgery Readiness | "Get me ready for my surgery" (rahul) | insurance + prior auth, protocol tests vs record, books tests, submits prior auth |
+| 📅 Appointment Booking | "I have thyroid problems, book me a doctor next week in the afternoon" (asha) | symptom → department, no duplicates, doctor continuity, preferred day/time, no clashes |
+| 🗺️ Visit Planner | "Plan my visit tomorrow" (asha) | timeline of the day, where to go, what to bring, fasting / walk-in tests, arrival rules |
+| 🔔 Proactive Care | runs automatically at login (bell) · "Check my reminders" | appointments soon, tests to book, results to follow up, insurance expiry, surgery paperwork - each with a one-click action |
+| 🧪 Lab Follow-up | "My cholesterol report is high, what next?" (john) | no interpretation; right department; existing visit or books a follow-up |
+| 💰 Cost Estimate | "How much will my knee replacement cost?" (asha) | your share from the rules engine, plan clauses, prepares pre-approval |
+| 🔁 Smart Rescheduling | "I'm travelling next week, move my appointments" (asha) / "Move all my appointments to afternoons" (rahul) | moves every affected appointment, respects the 24-hour rule, one approval |
+
+Agents live in `ai/agents/` (shared base class + `registry.py` with the trigger phrases). Steps run as code; the LLM
+only writes the summary, so agents work on the free tier and offline.
+
 ### Surgery Readiness Agent
 
 Log in as **rahul** and ask **"Get me ready for my surgery"**. The agent works through 7 steps live on screen:

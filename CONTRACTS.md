@@ -84,7 +84,9 @@ The response adds:
 | `POST /auth/login` | Login (5/min) | `{access_token, token_type, user:{id, username, name, role, patient_id}}` |
 | `GET /me/profile` | Header / plan | user + `plan:{name, member_id, coverage_end}` |
 | `GET /me/appointments` | Sidebar | upcoming appointments (`[]` for staff) |
-| `GET /me/pending-tests` | Sidebar | pending pre_op / lab / imaging orders |
+| `GET /me/pending-tests` | Sidebar | pending pre_op / lab / imaging orders (`scheduled_at`, `scheduled_location` when booked) |
+| `GET /me/notifications` | Bell (Proactive Care Agent, runs on each call) | `[{id, level: warning\|action\|info, title, text, action_label, action_prompt}]` (`[]` for staff) |
+| `GET /me/agents` | Agent catalogue | `[{name, title, icon}]` (`[]` for staff) |
 | `GET /sources/{chunk_id}` | Citation drawer | `{chunk_id, doc_id, title, section, doc_type, effective_date, version, text}` |
 | `GET /admin/audit?limit=50` | Staff only | masked audit rows |
 | `GET /health` | Liveness | `{ok, ai_mode}` |
@@ -108,7 +110,9 @@ and strips any identity arguments. Every tool returns `{"ok": true, "data": ...}
 
 | `get_test_slots` (agent) | test_name, from_date? | patient, staff | `[{slot_id, service, location, start}]` (blood tests are walk-in: not_found) |
 | `get_prior_auth_requests` (agent) | - | patient | `[{request_id, procedure_code, procedure, status, submitted_date}]` |
-| `propose_care_plan` (agent) | items: `[{type:"book_test", order_id, slot_id} \| {type:"submit_prior_auth", procedure_code}]` | patient | `{pending_action_id, items, summary, expires_at}` |
+| `propose_care_plan` (agent) | items: `[{type:"book_test", order_id, slot_id} \| {type:"submit_prior_auth", procedure_code} \| {type:"book_appointment", doctor_id, slot_id} \| {type:"reschedule_appointment", appointment_id, slot_id}]` | patient | `{pending_action_id, items, summary, expires_at}` |
+| `get_doctors` (agent) | department? | patient, staff | `[{doctor_id, name, specialty, department}]` |
+| `get_policy_status` (agent) | - | patient | `{plan, member_id, status, coverage_start, coverage_end, days_left, plan_doc_ref}` |
 
 \* staff see the schedule without patient locations. The three agent tools are used by the agent's code and are
 not offered to the LLM.

@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends
 
+from ai.agents.registry import CATALOG
+from ai.orchestrator import proactive_notifications
+
 from ..auth import get_current_user, public_user
+from ..chat_ctx import build_user_ctx
 from ..db import get_db
 from ..models import InsurancePlan, Patient, User
 from ..tools.registry import execute_tool
@@ -25,6 +29,20 @@ def my_appointments(user=Depends(get_current_user)):
         return []
     out = execute_tool("get_appointments", {"status": "upcoming"}, user)
     return out["data"] if out["ok"] else []
+
+
+@router.get("/notifications")
+def my_notifications(user=Depends(get_current_user), db=Depends(get_db)):
+    """Proactive Care Agent: runs on demand (the UI calls it at login and after every change)."""
+    if user["role"] != "patient":
+        return []
+    return proactive_notifications(build_user_ctx(db, user), execute_tool)
+
+
+@router.get("/agents")
+def my_agents(user=Depends(get_current_user)):
+    """The agents this user can use (patients only)."""
+    return CATALOG if user["role"] == "patient" else []
 
 
 @router.get("/pending-tests")

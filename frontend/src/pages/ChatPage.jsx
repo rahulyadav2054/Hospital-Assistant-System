@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { streamChat } from "../api/client.js";
 import AgentCard from "../components/AgentCard.jsx";
+import AgentHub from "../components/AgentHub.jsx";
 import ConfirmActionModal from "../components/ConfirmActionModal.jsx";
 import DebugPanel from "../components/DebugPanel.jsx";
 import LiveProgress from "../components/LiveProgress.jsx";
+import NotificationBell from "../components/NotificationBell.jsx";
 import Reply from "../components/Reply.jsx";
 import Sidebar from "../components/Sidebar.jsx";
 import SourceDrawer from "../components/SourceDrawer.jsx";
@@ -107,7 +109,7 @@ export default function ChatPage() {
       const others = live.steps.filter((s) => s.index !== ev.index);
       return { ...live, steps: [...others, ev].sort((a, b) => a.index - b.index) };
     }
-    if (type === "agent") return { ...live, agent: ev.title };
+    if (type === "agent") return { ...live, agent: { name: ev.name, title: ev.title, icon: ev.icon } };
     if (type === "status") return { ...live, status: ev.text };
     return live;
   }
@@ -118,7 +120,8 @@ export default function ChatPage() {
     setInput("");
     addMessage({ role: "user", text: message });
     const id = newId();
-    setMessages((ms) => [...ms, { id, role: "assistant", live: { tools: [], steps: [], agent: null, status: "" } }]);
+    setMessages((ms) => [...ms, { id, role: "assistant",
+      live: { tools: [], steps: [], agent: null, status: "", startedAt: Date.now() } }]);
     setBusy(true);
     try {
       const r = await streamChat({ message, session_id: sessionId },
@@ -126,6 +129,7 @@ export default function ChatPage() {
       setLastResponse(r);
       updateMessage(id, (m) => ({ ...m, live: null, response: r }));
       if (r.action_required?.type === "confirm_reschedule") setPendingAction(r.action_required);
+      if (r.intent === "agent") setRefreshKey((k) => k + 1); // let the Proactive Care Agent re-check
     } catch (e) {
       const errText = e.status === 429 ? "You are sending messages too quickly. Please wait a moment." : e.message;
       updateMessage(id, (m) => ({ ...m, live: null, response: { status: "error", answer: errText } }));
@@ -159,6 +163,13 @@ export default function ChatPage() {
   }
 
   const suggestions = SUGGESTIONS[user.username] ?? SUGGESTIONS[user.role] ?? SUGGESTIONS.patient;
+  const isPatient = user.role === "patient";
+
+  function onNotificationsLoaded(items) {
+    if (items.length) {
+      setToast({ ok: true, message: `🔔 Proactive Care Agent checked your record: ${items.length} thing(s) need attention` });
+    }
+  }
 
   return (
     <div className="h-full flex flex-col">
@@ -170,6 +181,9 @@ export default function ChatPage() {
           <div className="font-semibold truncate">City Care Hospital · Patient Assistant</div>
         </div>
         <span className="text-sm hidden sm:inline">{user.name}</span>
+        {isPatient && (
+          <NotificationBell refreshKey={refreshKey} onAsk={send} onFirstLoad={onNotificationsLoaded} />
+        )}
         <button type="button" onClick={() => setDebug((d) => !d)} aria-pressed={debug} data-testid="debug-toggle"
           className={`text-sm rounded px-3 py-1 ${debug ? "bg-white text-brand-700" : "bg-white/10 hover:bg-white/20"}`}>
           Debug
@@ -180,7 +194,7 @@ export default function ChatPage() {
       </header>
 
       <div className="flex-1 flex flex-col md:flex-row min-h-0">
-        <Sidebar user={user} refreshKey={refreshKey} open={sidebarOpen} />
+        <Sidebar user={user} refreshKey={refreshKey} open={sidebarOpen} onAsk={send} busy={busy} />
 
         <main className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto px-4 py-6" aria-live="polite">
@@ -195,6 +209,7 @@ export default function ChatPage() {
                     </button>
                   ))}
                 </div>
+                {isPatient && <AgentHub username={user.username} onAsk={send} disabled={busy} />}
               </div>
 
               {messages.map((m) => {
@@ -212,14 +227,15 @@ export default function ChatPage() {
                   return (
                     <div key={m.id} className="max-w-[92%]">
                       {m.live.agent
-                        ? <AgentCard title={m.live.agent} steps={m.live.steps} live status={m.live.status} />
+                        ? <AgentCard name={m.live.agent.name} title={m.live.agent.title} icon={m.live.agent.icon}
+                            steps={m.live.steps} live status={m.live.status} startedAt={m.live.startedAt} />
                         : <LiveProgress live={m.live} />}
                     </div>
                   );
                 }
                 return (
                   <div key={m.id} className="max-w-[92%]">
-                    <Reply r={m.response} onOpenSource={openSource} onPlanDone={onPlanDone} />
+                    <Reply r={m.response} onOpenSource={openSource} onPlanDone={onPlanDone} onAsk={send} />
                   </div>
                 );
               })}

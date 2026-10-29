@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import { formatWhen } from "../utils/format.js";
+import { AgentList } from "./AgentHub.jsx";
 
-export default function Sidebar({ user, refreshKey, open }) {
+export default function Sidebar({ user, refreshKey, open, onAsk, busy }) {
   const [appts, setAppts] = useState([]);
   const [tests, setTests] = useState([]);
   const [error, setError] = useState("");
@@ -36,6 +37,8 @@ export default function Sidebar({ user, refreshKey, open }) {
               </li>
             ))}
           </ul>
+          <h2 className="text-xs font-semibold tracking-wider text-violet-700 uppercase mb-1">🤖 Your AI agents</h2>
+          <div className="mb-6"><AgentList username={user.username} onAsk={onAsk} disabled={busy} /></div>
           <h2 className="text-xs font-semibold tracking-wider text-slate-500 uppercase mb-2">Pending tests</h2>
           <ul className="space-y-1.5" data-testid="sidebar-tests">
             {tests.length === 0 && <li className="text-sm text-slate-500">None</li>}

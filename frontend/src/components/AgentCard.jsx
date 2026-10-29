@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
+import { AGENT_BY_NAME } from "../agents.js";
 import { CARD_MAP } from "./Cards.jsx";
 import CitationChips from "./CitationChips.jsx";
 import { StatusIcon } from "./LiveProgress.jsx";
 import MessageBubble from "./MessageBubble.jsx";
 
 const STEP_STYLE = {
-  running: "border-brand-500 bg-brand-50",
+  running: "border-violet-400 bg-violet-50 shadow-sm",
   done: "border-emerald-200 bg-white",
   warning: "border-amber-200 bg-amber-50/40",
   stopped: "border-slate-300 bg-slate-50",
@@ -18,16 +19,26 @@ const STEP_BADGE = {
   stopped: ["Stopped", "bg-slate-200 text-slate-700"],
 };
 
-/** The agent's steps. Used live (details unverified, no citation links yet) and for the final answer. */
+const PHASES = ["Planning", "Using tools", "Verifying", "Done"];
+
+function phaseOf({ live, steps, status }) {
+  if (!live) return 3;
+  if (/verif/i.test(status || "")) return 2;
+  return steps.length ? 1 : 0;
+}
+
+/** The agent's steps as a vertical timeline. Used live (unverified) and for the final, verified answer. */
 export function AgentSteps({ steps, onCite }) {
   return (
-    <ol className="space-y-2" data-testid="agent-steps">
+    <ol className="relative space-y-2 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-violet-100" data-testid="agent-steps">
       {steps.map((s) => (
-        <li key={s.index} className={`border rounded-lg px-3 py-2 reveal ${STEP_STYLE[s.status] ?? "bg-white"}`}
+        <li key={s.index} className={`relative ml-7 border rounded-lg px-3 py-2 reveal ${STEP_STYLE[s.status] ?? "bg-white"}`}
           data-testid={`agent-step-${s.index}`} data-status={s.status}>
+          <span className="absolute -left-7 top-2 w-6 h-6 rounded-full bg-white border-2 border-violet-300 text-[0.7rem] font-bold text-violet-700 flex items-center justify-center">
+            {s.index}
+          </span>
           <div className="flex items-center gap-2 text-sm font-medium">
             <StatusIcon status={s.status} />
-            <span className="text-slate-400">Step {s.index}</span>
             <span>{s.title}</span>
             {STEP_BADGE[s.status] && (
               <span className={`ml-auto text-xs font-normal rounded-full px-2 py-0.5 ${STEP_BADGE[s.status][1]}`}>
@@ -80,15 +91,19 @@ export function PlanApproval({ action, onDone }) {
   if (state.result) {
     return (
       <div className="mt-3 border border-emerald-200 bg-emerald-50 rounded-lg p-3 text-sm" data-testid="plan-done">
-        <div className="font-semibold text-emerald-800 mb-1">Plan approved</div>
-        <ul className="space-y-1">{state.result.results.map((r) => <li key={r.index}>✅ {r.message}</li>)}</ul>
+        <div className="font-semibold text-emerald-800 mb-1">✅ Approved - the agent completed it</div>
+        <ul className="space-y-1">{state.result.results.map((r) => <li key={r.index}>✔ {r.message}</li>)}</ul>
       </div>
     );
   }
   return (
-    <div className="mt-3 border-2 border-brand-500 rounded-lg p-3" data-testid="plan-approval">
-      <div className="font-semibold text-brand-900">{action.items.length === 1 ? "Proposed booking" : "Proposed plan"}</div>
-      <p className="text-xs text-slate-500 mb-2">Nothing is booked or submitted until you approve. Untick anything you don't want.</p>
+    <div className="mt-3 border-2 border-violet-500 rounded-lg p-3 bg-white" data-testid="plan-approval">
+      <div className="flex items-center gap-2">
+        <span aria-hidden="true">🛡️</span>
+        <span className="font-semibold text-brand-900">{action.items.length === 1 ? "Proposed booking" : "Proposed plan"}</span>
+        <span className="ml-auto text-[0.65rem] font-semibold text-violet-700 bg-violet-100 rounded-full px-2 py-0.5">NEEDS YOUR APPROVAL</span>
+      </div>
+      <p className="text-xs text-slate-500 mb-2 mt-1">The agent prepared this but has not changed anything. Untick anything you don't want.</p>
       <ul className="space-y-2">
         {action.items.map((it, i) => (
           <li key={it.index}>
@@ -103,7 +118,7 @@ export function PlanApproval({ action, onDone }) {
       {state.error && <p className="text-sm text-red-700 mt-2" role="alert">{state.error}</p>}
       <div className="flex gap-2 mt-3">
         <button type="button" onClick={approve} disabled={state.busy || selected.length === 0}
-          className="bg-brand-700 hover:bg-brand-600 text-white text-sm font-medium rounded-lg px-4 py-2 disabled:opacity-50">
+          className="bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg px-4 py-2 disabled:opacity-50">
           {state.busy ? "Saving…" : action.items.length === 1 ? "Approve booking"
             : selected.length === action.items.length ? "Approve all" : `Approve ${selected.length} selected`}
         </button>
@@ -114,30 +129,69 @@ export function PlanApproval({ action, onDone }) {
   );
 }
 
+function Elapsed({ since }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(t);
+  }, []);
+  return <span className="tabular-nums">{((now - since) / 1000).toFixed(1)}s</span>;
+}
+
 /** Live (while streaming) or final agent answer. */
-export default function AgentCard({ title, steps, live, status, response, onOpenSource, onPlanDone }) {
+export default function AgentCard({ name, title, icon, steps, live, status, startedAt, response, onOpenSource,
+  onPlanDone, onAsk }) {
+  const meta = AGENT_BY_NAME[name] ?? {};
   const onCite = response ? (id) => onOpenSource(response, id) : undefined;
+  const phase = phaseOf({ live, steps, status });
+  const done = steps.filter((s) => s.status !== "running").length;
+  const pct = live ? Math.min(95, Math.round((done / (steps.length + 1)) * 100)) : 100;
+  const tookMs = response?.latency_ms;
+
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm" data-testid="agent-card">
-      <div className="flex items-center gap-2 mb-2">
-        <span aria-hidden="true">🤖</span>
-        <span className="font-semibold text-brand-900">{title}</span>
-        {live && <span className="text-xs text-brand-600 animate-pulse">working…</span>}
+    <div className="bg-white border border-violet-200 rounded-2xl rounded-tl-sm shadow-sm overflow-hidden" data-testid="agent-card">
+      <div className="bg-gradient-to-r from-violet-600 to-brand-700 text-white px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          <span className={`text-xl ${live ? "animate-pulse" : ""}`} aria-hidden="true">{icon || meta.icon || "🤖"}</span>
+          <div className="min-w-0">
+            <div className="font-semibold leading-tight">{title}</div>
+            <div className="text-[0.7rem] text-violet-100">
+              {live ? <>Agent working · <Elapsed since={startedAt} /></> : `Agent finished · ${done} steps${tookMs ? ` · ${(tookMs / 1000).toFixed(1)}s` : ""}`}
+            </div>
+          </div>
+          <span className="ml-auto text-[0.65rem] font-semibold bg-white/20 rounded-full px-2 py-0.5">AI AGENT</span>
+        </div>
+        <div className="flex gap-1 mt-2" aria-label="Agent phase">
+          {PHASES.map((p, i) => (
+            <span key={p} className={`text-[0.65rem] rounded-full px-2 py-0.5 ${i < phase ? "bg-white/30" : i === phase ? "bg-white text-violet-700 font-semibold" : "bg-white/10 text-violet-100"}`}>
+              {i < phase ? "✓ " : ""}{p}
+            </span>
+          ))}
+        </div>
+        <div className="h-1 bg-white/20 rounded-full mt-2 overflow-hidden">
+          <div className="h-full bg-white rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+        </div>
       </div>
-      {response?.agent?.summary && (
-        <div className="mb-3"><MessageBubble text={response.agent.summary} onCite={onCite} animate /></div>
-      )}
-      <AgentSteps steps={steps} onCite={onCite} />
-      {live && status && <p className="text-xs text-slate-500 mt-2">{status}</p>}
-      {response?.cards?.map((c, i) => {
-        const Card = CARD_MAP[c.type];
-        return Card ? <Card key={i} data={c.data} /> : null;
-      })}
-      {response?.action_required?.type === "confirm_plan" && (
-        <PlanApproval action={response.action_required} onDone={onPlanDone} />
-      )}
-      {response && <CitationChips citations={response.citations} onOpen={(id) => onOpenSource(response, id)} />}
-      {response?.disclaimer && <p className="text-xs text-slate-500 mt-2">ⓘ {response.disclaimer}</p>}
+
+      <div className="px-4 py-3">
+        {response?.agent?.summary && (
+          <div className="mb-3 bg-violet-50 border border-violet-100 rounded-lg p-3">
+            <div className="text-[0.7rem] font-semibold text-violet-700 uppercase mb-1">Summary</div>
+            <MessageBubble text={response.agent.summary} onCite={onCite} animate />
+          </div>
+        )}
+        <AgentSteps steps={steps} onCite={onCite} />
+        {live && <p className="text-xs text-slate-500 mt-2 flex items-center gap-2"><span className="inline-block w-2 h-2 rounded-full bg-violet-500 animate-ping" />{status || "Planning the next step…"}</p>}
+        {response?.cards?.map((c, i) => {
+          const Card = CARD_MAP[c.type];
+          return Card ? <Card key={i} data={c.data} onAsk={onAsk} /> : null;
+        })}
+        {response?.action_required?.type === "confirm_plan" && (
+          <PlanApproval action={response.action_required} onDone={onPlanDone} />
+        )}
+        {response && <CitationChips citations={response.citations} onOpen={(id) => onOpenSource(response, id)} />}
+        {response?.disclaimer && <p className="text-xs text-slate-500 mt-2">ⓘ {response.disclaimer}</p>}
+      </div>
     </div>
   );
 }

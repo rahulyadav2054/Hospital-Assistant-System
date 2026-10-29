@@ -6,6 +6,7 @@ classify_rules()  - deterministic keyword rules (offline mode, and fallback if t
 import re
 
 from . import config
+from .agents import registry as agent_registry
 from .prompts import CLASSIFIER_PROMPT
 
 INTENTS = ["policy", "procedure", "personal_data", "eligibility", "lab_result", "multi_step", "action",
@@ -48,10 +49,8 @@ def classify(message: str, history: list[dict], client) -> dict:
 
 
 # ---------------------------------------------------------------- deterministic rules
-# Goal-style requests handled by the Surgery Readiness Agent (multi-step plan + one approval).
-_AGENT = re.compile(r"\b(get|make) me ready\b|\bprepare me\b|\bhelp me (get )?prepare\b"
-                    r"|\b(get )?ready for (my |the )?(surgery|operation)\b|\bsurgery readiness\b|\breadiness check\b"
-                    r"|\bprepare for (my |the )?(surgery|operation)\b|\bplan (for )?my (surgery|operation)\b", re.I)
+# Goal-style requests ("get me ready for my surgery", "book me a doctor", ...) go to an agent:
+# see ai/agents/registry.py for the triggers.
 # "do the ECG test", "book my chest X-ray tomorrow", "I need an MRI" -> book one test (not "how do I ...").
 _BOOK_TEST = re.compile(r"\b(book|schedule|do|get|take|arrange|fix|need|want)\b.{0,40}?"
                         r"\b(ecg|electrocardiogram|x-?ray|xray|mri|blood test|cbc|complete blood count|test)s?\b", re.I)
@@ -90,8 +89,9 @@ def contextual_message(message: str, history: list[dict]) -> str:
 def classify_rules(message: str, history: list[dict] | None = None) -> dict:
     text = contextual_message(message, history or [])
     route = None
-    if _AGENT.search(text):
-        intent = "agent"
+    agent = agent_registry.match(text)
+    if agent:
+        intent, route = "agent", agent
     elif _OUT_OF_SCOPE.search(text):
         intent = "out_of_scope"
     elif _BOOK_TEST.search(text) and not _NOT_BOOKING.search(text):

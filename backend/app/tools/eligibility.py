@@ -46,6 +46,18 @@ def decision(covered, reasons, plan, proc, rule=None, est_patient_cost=None):
     }
 
 
+def get_policy_status(db, patient_id, user_ctx):
+    """The patient's own insurance policy: active / expired / not started, and days left."""
+    p = db.get(Patient, patient_id)
+    plan = db.get(InsurancePlan, p.plan_id)
+    today = date.today()
+    status = "active" if p.coverage_start <= today <= p.coverage_end else (
+        "expired" if today > p.coverage_end else "not started")
+    return {"plan": plan.name, "member_id": p.plan_member_id, "status": status,
+            "coverage_start": p.coverage_start.isoformat(), "coverage_end": p.coverage_end.isoformat(),
+            "days_left": (p.coverage_end - today).days, "plan_doc_ref": plan.doc_ref}
+
+
 def check_coverage(db, patient_id, user_ctx, procedure_name=None, procedure_code=None):
     patient = db.get(Patient, patient_id)
     plan = db.get(InsurancePlan, patient.plan_id)

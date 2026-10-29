@@ -22,6 +22,9 @@ REGISTRY = {
     "get_test_slots": (care_plan.get_test_slots, {"patient", "staff"}),
     "get_prior_auth_requests": (care_plan.get_prior_auth_requests, {"patient"}),
     "propose_care_plan": (care_plan.propose_care_plan, {"patient"}),
+    # Other agents
+    "get_doctors": (directory.get_doctors, {"patient", "staff"}),
+    "get_policy_status": (eligibility.get_policy_status, {"patient"}),
 }
 
 _RESERVED = {"patient_id", "user_ctx", "db", "user_id", "role"}

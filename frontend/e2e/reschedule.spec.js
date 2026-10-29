@@ -76,6 +76,37 @@ test("surgery readiness agent: live steps, one approval, sidebar shows bookings"
   await expect(page.getByTestId("test-ORD-504")).toContainText("Booked");
 });
 
+test("proactive bell: notifications appear and one click starts the right agent", async ({ page }) => {
+  // meera: out-of-range results (rahul's items are already handled by the surgery-readiness test above)
+  await login(page, "meera");
+  await expect(page.getByTestId("bell-count")).toBeVisible();
+  await page.getByTestId("bell").click();
+  const panel = page.getByTestId("bell-panel");
+  await expect(panel).toContainText("Fasting Glucose");
+  await panel.getByRole("button", { name: /Next steps/ }).first().click();
+  const card = page.getByTestId("agent-card").last();
+  await expect(card).toContainText("Lab Follow-up Agent");
+  await expect(card).toContainText("take this report");
+});
+
+test("agent hub: Visit Planner tile builds a timeline", async ({ page }) => {
+  await login(page, "meera");
+  await page.getByTestId("agent-tile-visit_planner").click();
+  const card = page.getByTestId("agent-card").last();
+  await expect(card).toContainText("Visit Planner Agent");
+  await expect(card.getByTestId("visit-timeline")).toContainText("Endocrinology");
+});
+
+test("appointment booking agent books a new appointment", async ({ page }) => {
+  await login(page, "asha");
+  await ask(page, "I have thyroid problems, book me a doctor");
+  const card = page.getByTestId("agent-card").last();
+  await expect(card).toContainText("Appointment Booking Agent");
+  await card.getByRole("button", { name: "Approve booking" }).click();
+  await expect(card.getByTestId("plan-done")).toContainText("Endocrinology");
+  await expect(page.getByTestId("sidebar-appointments")).toContainText("Endocrinology");
+});
+
 test("wrong password shows an error", async ({ page }) => {
   await page.goto("/login");
   await page.fill("#username", "asha");

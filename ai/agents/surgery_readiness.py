@@ -17,68 +17,17 @@ an LLM, when available, only writes the short summary at the top.
 import re
 from datetime import date
 
-from ..grounding import split_sentences
 from ..sources import RunContext, when
+from .base import _TEST_KEYS, BaseAgent, _cite, _sentence, test_key  # noqa: F401  (re-exported for test_booking)
 
 NAME = "surgery_readiness"
 TITLE = "Surgery Readiness Agent"
 
-_TEST_KEYS = [
-    ("cbc", ("complete blood count", "cbc", "blood count")),
-    ("ecg", ("electrocardiogram", "ecg")),
-    ("xray", ("chest x-ray", "x-ray", "xray")),
-    ("hba1c", ("hba1c",)),
-    ("coag", ("coagulation", "pt/inr")),
-    ("mri", ("mri", "magnetic resonance")),
-]
 
-
-def test_key(name: str) -> str:
-    t = name.lower()
-    for key, words in _TEST_KEYS:
-        if any(w in t for w in words):
-            return key
-    return t.strip()
-
-
-def _sentence(chunks, ids, must):
-    """First sentence (with its source id) containing every phrase in `must`."""
-    for c, sid in zip(chunks, ids):
-        for line in c["text"].splitlines():
-            for s in split_sentences(line):
-                if all(m.lower() in s.lower() for m in must):
-                    return s, sid
-    return None
-
-
-def _cite(sentence: str, *sids: str) -> str:
-    s = sentence.rstrip()
-    tags = "".join(f"[{x}]" for x in sids if x)
-    if s and s[-1] in ".!?":
-        return f"{s[:-1]} {tags}{s[-1]}"
-    return f"{s} {tags}."
-
-
-class SurgeryReadinessAgent:
-    def __init__(self, ctx: RunContext):
-        self.ctx = ctx
-        self.steps: list[dict] = []
-        self.plan_items: list[dict] = []
-        self.record_sids: list[str] = []
-
-    # ------------------------------------------------------------------ step bookkeeping (streamed live)
-    def _start(self, title: str) -> dict:
-        step = {"index": len(self.steps) + 1, "title": title, "status": "running", "details": []}
-        self.steps.append(step)
-        self.ctx.emit({"type": "step", **step})
-        return step
-
-    def _finish(self, step: dict, status: str, details: list[str]) -> None:
-        step["status"], step["details"] = status, [d for d in details if d]
-        self.ctx.emit({"type": "step", **step})
-
-    def _empty(self, ids, text):
-        return _cite(text, ids[0]) if ids else ""
+class SurgeryReadinessAgent(BaseAgent):
+    NAME = NAME
+    TITLE = TITLE
+    ICON = "🩺"
 
     # ------------------------------------------------------------------ the plan
     def run(self) -> dict:
@@ -245,7 +194,7 @@ class SurgeryReadinessAgent:
         lines = ["Here is your surgery readiness check:"]
         for s in self.steps:
             lines += [f"- {d}" for d in s["details"]]
-        return {"draft": "\n".join(lines), "steps": self.steps}
+        return {"draft": "\n".join(lines), "steps": self.steps, "cards": self.cards}
 
 
 def run(ctx: RunContext) -> dict:

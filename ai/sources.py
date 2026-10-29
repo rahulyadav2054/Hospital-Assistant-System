@@ -32,6 +32,8 @@ TOOL_LABELS = {
     "get_test_slots": "Finding test slots",
     "get_prior_auth_requests": "Checking prior-authorization requests",
     "propose_care_plan": "Preparing your plan",
+    "get_doctors": "Finding doctors",
+    "get_policy_status": "Checking your insurance policy",
 }
 
 
@@ -157,6 +159,8 @@ class RunContext:
                 done = f", completed on {o['completed_date']}" if o.get("completed_date") else ""
                 if o.get("scheduled_at"):
                     done += f", booked for {when(o['scheduled_at'])}"
+                    if o.get("scheduled_location"):
+                        done += f" at {o['scheduled_location']}"
                 linked = f" for {o['linked_procedure']}" if o.get("linked_procedure") else ""
                 ids.append(self.add_source(
                     f"ord:{o['order_id']}", source_type="record", title=f"Order: {o['description']}",
@@ -194,6 +198,19 @@ class RunContext:
                 text=(f"Pending action {d['pending_action_id']}: {d['summary']} (new time {when(d['new_start'])}). "
                       f"NOT yet confirmed - nothing changes until the patient presses Confirm in the app. "
                       f"The request expires at {d['expires_at'][11:16]}.")))
+        elif name == "get_doctors":
+            for d in data:
+                ids.append(self.add_source(
+                    f"dr:{d['doctor_id']}", source_type="record", title=f"Doctor: {d['name']}", ref=d["doctor_id"],
+                    text=f"{d['name']} (doctor_id={d['doctor_id']}), {d['specialty']}, {d['department']}."))
+        elif name == "get_policy_status":
+            p = data
+            ids.append(self.add_source(
+                f"policy:{p['member_id']}", source_type="record", title=f"Insurance policy: {p['plan']}",
+                ref=p["member_id"],
+                text=(f"Insurance policy {p['plan']} (member {p['member_id']}): status {p['status']}, valid from "
+                      f"{p['coverage_start']} to {p['coverage_end']} ({p['days_left']} days left). "
+                      f"Plan document {p['plan_doc_ref']}.")))
         elif name == "get_test_slots":
             for s in data:
                 ids.append(self.add_source(
